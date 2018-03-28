@@ -14,6 +14,7 @@ var server = new opcua.OPCUAServer({
 		buildDate: new Date(2014,5,2)
 	}
 });
+//moi
 
 function post_initialize() {
     console.log("initialized");
