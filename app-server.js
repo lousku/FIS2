@@ -1,3 +1,4 @@
+miika on paras
 var Tank = require('water-tank')
 var tank1 = new Tank(10, 2.5, 1, 0.013, 0.7, 0.60, 3001);
 var opcua = require("node-opcua");
@@ -17,8 +18,8 @@ var server = new opcua.OPCUAServer({
 function post_initialize() {
     console.log("initialized");
     function construct_my_address_space(server) {
-		
-        // Create the device 
+
+        // Create the device
         var addressSpace = server.engine.addressSpace;
         var device = addressSpace.addObject({
             organizedBy: addressSpace.rootFolder.objects,
@@ -29,7 +30,7 @@ function post_initialize() {
             componentOf: device,
             nodeId: "ns=1;s=water_level", // a string nodeID
             browseName: "Level",
-            dataType: "Double",    
+            dataType: "Double",
             value: {
                 get: function () {return new opcua.Variant({dataType: opcua.DataType.Double, value: tank1.getLevel()});}
             }
@@ -38,7 +39,7 @@ function post_initialize() {
             componentOf: device,
             nodeId: "ns=1;s=valv", // a string nodeID
             browseName: "Valve",
-            dataType: "Double",    
+            dataType: "Double",
             value: {
                 get: function () {return new opcua.Variant({dataType: opcua.DataType.Double, value: tank1.getValve()});}
             }
@@ -50,7 +51,7 @@ function post_initialize() {
 				{
 					name:"valve",
 					description: { text: "% of opening of the valve" },
-					dataType: opcua.DataType.Float        
+					dataType: opcua.DataType.Float
 				}
 			 ],
 
@@ -90,7 +91,7 @@ function post_initialize() {
 				}]
 			};
 			callback(null, callMethodResult);
-			
+
 		});
 		var method4 = addressSpace.addMethod(device,{
 			browseName: "getLevel",
@@ -112,7 +113,7 @@ function post_initialize() {
 				}]
 			};
 			callback(null, callMethodResult);
-			
+
 		});
 		// add historical data
 		var levelRecord = addressSpace.addAnalogDataItem({
@@ -145,16 +146,9 @@ function post_initialize() {
         console.log("Server is now listening ... ( press CTRL+C to stop)");
         console.log("port ", server.endpoints[0].port);
         console.log(server.endpoints.length);
-		
+
         var endpointUrl = server.endpoints[0].endpointDescriptions()[0].endpointUrl;
         console.log(" the primary server endpoint url is ", endpointUrl );
     });
 }
 server.initialize(post_initialize);
-
-
-
-
-
-
-
