@@ -1,4 +1,4 @@
-miika on paras
+miika on parasc moi
 var Tank = require('water-tank')
 var tank1 = new Tank(10, 2.5, 1, 0.013, 0.7, 0.60, 3001);
 var opcua = require("node-opcua");
