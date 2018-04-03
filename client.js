@@ -10,27 +10,9 @@ var the_session, the_subscription;
 
 var omaNode;
 
-//Start experience Id-list
-let Start_experience_methodToCall = [{
-  objectId: "ns=1;i=1000",
-  methodId: "ns=1;i=1001",
-}];
-
-//Set valve value Id-list
-let Set_valve_methodToCalls = [{
-  objectId: "ns=1;i=1000",
-  methodId: "ns=1;i=1003",
-}];
-
-//Valve level Id-list
-let Get_valve_methodToCalls = [{
-  objectId: "ns=1;i=1000",
-  methodId: "ns=1;i=1006",
-}];
-
 async.series([
 
-    // step 1 : connect to
+    // step 1 : connect to server
     function(callback)  {
         client.connect(endpointUrl,function (err) {
             if(err) {
@@ -53,96 +35,20 @@ async.series([
         });
     },
 
-    // step 3 : browse
+    //Experiment start
     function(callback) {
-       the_session.browse("RootFolder", function(err,browseResult){
-           if(!err) {
-               browseResult.references.forEach(function(reference) {
-                   console.log( reference.browseName.toString());
-                   console.log("REFERENCE!" + reference);
-                   console.log("NODECLASSS: " + reference.nodeClass);
-                   omaNode = reference.nodeClass;
-               });
-               console.log("browse onnistu");
-           }
-           callback(err);
-       });
-    },
-
-    // step 4 : read a variable with readVariableValue
-    function(callback) {
-       the_session.readVariableValue("ns=1;s=water_level", function(err,dataValue) {
-           if (!err) {
-               console.log(" free mem % = " , dataValue.toString());
-           }
-           callback(err);
-       });
-
-
-    },
-
-    // step 4' : read a variable with read
-    function(callback) {
-       var maxAge = 0;
-       var nodeToRead = { nodeId: "ns=1;s=water_level", attributeId: opcua.AttributeIds.Value };
-       the_session.read(nodeToRead, maxAge, function(err,dataValue) {
-           if (!err) {
-               console.log(" free mem % = " , dataValue.toString() );
-           }
-           callback(err);
-       });
-
-
-    },
-     //browsing NodeId:s (Experiment käyntiin)
-    function(callback) {
-      var nodetobrowse;
-      var browsePath = [
-          opcua.makeBrowsePath("RootFolder", "/Objects"),
-      ];
-        console.log("browseBAth: " + browsePath);
-
-        the_session.browse("ns=1;i=1000", function (err, itemResults,diagnostics) {
-            if (!err) {
-              console.log("TULOS" + itemResults);
-              console.log("JOO" + diagnostics);
-            //  nodetobrowse = results.targets.targetId;
-            //  console.log("TARGETTI!!!" + nodetobrowse );
-            //  productNameNodeId = results[0].targets[0].targetId;
-            }
-        });
-
         let Tank_startExp_methodToCalls = [{
           objectId: "ns=1;i=1000",
           methodId: "ns=1;i=1003",
-          //inputArguments: [{dataType: opcua.DataType.Float, value: 1}]
-    //   inputArguments: [{dataType: DataType.Int64, value: value}]
    }];
        the_session.call(Tank_startExp_methodToCalls, function(err,results) {
            if (!err) {
-               console.log(" method ok" );
+               console.log("Start experiment Method OK" );
                console.log(results);
            }
-           console.log("kirjottamisessa virhe")
-           callback(err);
-       });
-    },
-
-
-    //HANA AUKII!!!!
-    function(callback) {
-        let Tank_startExp_methodToCalls = [{
-          objectId: "ns=1;i=1000",
-          methodId: "ns=1;i=1001",
-          inputArguments: [{dataType: opcua.DataType.Float, value: 0.85}]
-    //   inputArguments: [{dataType: DataType.Int64, value: value}]
-   }];
-       the_session.call(Tank_startExp_methodToCalls, function(err,results) {
-           if (!err) {
-               console.log(" method ok" );
-               console.log(results);
+           else {
+               console.log("Start experiment Method FAILED!" )
            }
-           console.log("kirjottamisessa virhe")
            callback(err);
        });
     },
@@ -151,7 +57,7 @@ async.series([
     function(callback) {
 
        the_subscription=new opcua.ClientSubscription(the_session,{
-           requestedPublishingInterval: 1000,
+           requestedPublishingInterval: 10,
            requestedLifetimeCount: 10,
            requestedMaxKeepAliveCount: 1,
            maxNotificationsPerPublish: 10,
@@ -168,7 +74,7 @@ async.series([
 
        setTimeout(function(){
            the_subscription.terminate(callback);
-       },10000);
+       },100000);
 
        // install monitored item
        var monitoredItem  = the_subscription.monitor({
@@ -176,7 +82,7 @@ async.series([
            attributeId: opcua.AttributeIds.Value
        },
        {
-           samplingInterval: 100,
+           samplingInterval: 10,
            discardOldest: true,
            queueSize: 10
        },
@@ -184,9 +90,16 @@ async.series([
        );
        console.log("-------------------------------------");
 
-       //Main loop
+       //Main Loop
        monitoredItem.on("changed",function(dataValue){
           console.log(" Tank Level = ",dataValue.value.value);
+          if(dataValue.value.value >= 6.5){
+            set_valve(the_session,1);
+          }
+          else{
+            set_valve(the_session,0.5);
+          }
+
        });
     },
 
@@ -209,3 +122,21 @@ function(err) {
     }
     client.disconnect(function(){});
 }) ;
+
+//Setting valve position
+function set_valve(session, input_value) {
+    let Valve_methodToCalls = [{
+      objectId: "ns=1;i=1000",
+      methodId: "ns=1;i=1001",
+      inputArguments: [{dataType: opcua.DataType.Float, value: input_value}]
+}];
+   session.call(Valve_methodToCalls, function(err,results) {
+       if (!err) {
+           console.log("Set valve method OK" );
+           //console.log(results);
+       }
+       else {
+            console.log("Set valve method FAIL");
+       }
+   });
+}
