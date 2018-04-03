@@ -4,11 +4,29 @@ var async = require("async");
 
 var client = new opcua.OPCUAClient();
 //this need to be the Uri of the server
-var endpointUrl = "opc.tcp://TREKT182.EATECH.LOCAL:3003/MyLittleServer";
+var endpointUrl = "opc.tcp://dyn-159-234.public.tut.fi:3003/MyLittleServer";
 
 var the_session, the_subscription;
 
 var omaNode;
+
+//Start experience Id-list
+let Start_experience_methodToCall = [{
+  objectId: "ns=1;i=1000",
+  methodId: "ns=1;i=1001",
+}];
+
+//Set valve value Id-list
+let Set_valve_methodToCalls = [{
+  objectId: "ns=1;i=1000",
+  methodId: "ns=1;i=1003",
+}];
+
+//Valve level Id-list
+let Get_valve_methodToCalls = [{
+  objectId: "ns=1;i=1000",
+  methodId: "ns=1;i=1006",
+}];
 
 async.series([
 
@@ -76,7 +94,7 @@ async.series([
 
 
     },
-     //try to write to variable
+     //browsing NodeId:s (Experiment käyntiin)
     function(callback) {
       var nodetobrowse;
       var browsePath = [
@@ -94,15 +112,12 @@ async.series([
             }
         });
 
-
-
-
-            let Tank_startExp_methodToCalls = [{
-       objectId: "ns=1;i=1000",
-       methodId: "ns=1;i=1003",
+        let Tank_startExp_methodToCalls = [{
+          objectId: "ns=1;i=1000",
+          methodId: "ns=1;i=1003",
+          //inputArguments: [{dataType: opcua.DataType.Float, value: 1}]
     //   inputArguments: [{dataType: DataType.Int64, value: value}]
    }];
-
        the_session.call(Tank_startExp_methodToCalls, function(err,results) {
            if (!err) {
                console.log(" method ok" );
@@ -111,8 +126,25 @@ async.series([
            console.log("kirjottamisessa virhe")
            callback(err);
        });
+    },
 
 
+    //HANA AUKII!!!!
+    function(callback) {
+        let Tank_startExp_methodToCalls = [{
+          objectId: "ns=1;i=1000",
+          methodId: "ns=1;i=1001",
+          inputArguments: [{dataType: opcua.DataType.Float, value: 0.85}]
+    //   inputArguments: [{dataType: DataType.Int64, value: value}]
+   }];
+       the_session.call(Tank_startExp_methodToCalls, function(err,results) {
+           if (!err) {
+               console.log(" method ok" );
+               console.log(results);
+           }
+           console.log("kirjottamisessa virhe")
+           callback(err);
+       });
     },
 
     // step 5: install a subscription and install a monitored item for 10 seconds
@@ -152,8 +184,9 @@ async.series([
        );
        console.log("-------------------------------------");
 
+       //Main loop
        monitoredItem.on("changed",function(dataValue){
-          console.log(" % free mem = ",dataValue.value.value);
+          console.log(" Tank Level = ",dataValue.value.value);
        });
     },
 
