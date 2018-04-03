@@ -8,6 +8,8 @@ var endpointUrl = "opc.tcp://TREKT182.EATECH.LOCAL:3003/MyLittleServer";
 
 var the_session, the_subscription;
 
+var omaNode;
+
 async.series([
 
     // step 1 : connect to
@@ -39,6 +41,9 @@ async.series([
            if(!err) {
                browseResult.references.forEach(function(reference) {
                    console.log( reference.browseName.toString());
+                   console.log("REFERENCE!" + reference);
+                   console.log("NODECLASSS: " + reference.nodeClass);
+                   omaNode = reference.nodeClass;
                });
                console.log("browse onnistu");
            }
@@ -73,16 +78,35 @@ async.series([
     },
      //try to write to variable
     function(callback) {
-       var nodeToWrite = { nodeId: "ns=1;s=valv",
-                          dataType: "Double",
-                          attributeId: opcua.AttributeIds.Value,
-                          value: 100 };
+      var nodetobrowse;
+      var browsePath = [
+          opcua.makeBrowsePath("RootFolder", "/Objects"),
+      ];
+        console.log("browseBAth: " + browsePath);
 
-       the_session.write(nodeToWrite, function(err,statusCode,diagnosticInfo) {
+        the_session.browse("ns=1;i=1000", function (err, itemResults,diagnostics) {
+            if (!err) {
+              console.log("TULOS" + itemResults);
+              console.log("JOO" + diagnostics);
+            //  nodetobrowse = results.targets.targetId;
+            //  console.log("TARGETTI!!!" + nodetobrowse );
+            //  productNameNodeId = results[0].targets[0].targetId;
+            }
+        });
+
+
+
+
+            let Tank_startExp_methodToCalls = [{
+       objectId: "ns=1;i=1000",
+       methodId: "ns=1;i=1003",
+    //   inputArguments: [{dataType: DataType.Int64, value: value}]
+   }];
+
+       the_session.call(Tank_startExp_methodToCalls, function(err,results) {
            if (!err) {
-               console.log(" write ok" );
-               console.log(diagnosticInfo);
-              console.log(statusCode);
+               console.log(" method ok" );
+               console.log(results);
            }
            console.log("kirjottamisessa virhe")
            callback(err);
@@ -97,7 +121,7 @@ async.series([
        the_subscription=new opcua.ClientSubscription(the_session,{
            requestedPublishingInterval: 1000,
            requestedLifetimeCount: 10,
-           requestedMaxKeepAliveCount: 2,
+           requestedMaxKeepAliveCount: 1,
            maxNotificationsPerPublish: 10,
            publishingEnabled: true,
            priority: 10
