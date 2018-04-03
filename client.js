@@ -3,8 +3,8 @@ var opcua = require("node-opcua");
 var async = require("async");
 
 var client = new opcua.OPCUAClient();
-var endpointUrl = "opc.tcp://" + require("os").hostname() + ":4334/UA/MyLittleServer";
-
+//this need to be the Uri of the server
+var endpointUrl = "opc.tcp://TREKT182.EATECH.LOCAL:3003/MyLittleServer";
 
 var the_session, the_subscription;
 
@@ -28,6 +28,7 @@ async.series([
             if(!err) {
                 the_session = session;
             }
+            console.log("sessio luotu");
             callback(err);
         });
     },
@@ -39,6 +40,7 @@ async.series([
                browseResult.references.forEach(function(reference) {
                    console.log( reference.browseName.toString());
                });
+               console.log("browse onnistu");
            }
            callback(err);
        });
@@ -46,7 +48,7 @@ async.series([
 
     // step 4 : read a variable with readVariableValue
     function(callback) {
-       the_session.readVariableValue("ns=1;s=free_memory", function(err,dataValue) {
+       the_session.readVariableValue("ns=1;s=water_level", function(err,dataValue) {
            if (!err) {
                console.log(" free mem % = " , dataValue.toString());
            }
@@ -59,11 +61,30 @@ async.series([
     // step 4' : read a variable with read
     function(callback) {
        var maxAge = 0;
-       var nodeToRead = { nodeId: "ns=1;s=free_memory", attributeId: opcua.AttributeIds.Value };
+       var nodeToRead = { nodeId: "ns=1;s=water_level", attributeId: opcua.AttributeIds.Value };
        the_session.read(nodeToRead, maxAge, function(err,dataValue) {
            if (!err) {
                console.log(" free mem % = " , dataValue.toString() );
            }
+           callback(err);
+       });
+
+
+    },
+     //try to write to variable
+    function(callback) {
+       var nodeToWrite = { nodeId: "ns=1;s=valv",
+                          dataType: "Double",
+                          attributeId: opcua.AttributeIds.Value,
+                          value: 100 };
+
+       the_session.write(nodeToWrite, function(err,statusCode,diagnosticInfo) {
+           if (!err) {
+               console.log(" write ok" );
+               console.log(diagnosticInfo);
+              console.log(statusCode);
+           }
+           console.log("kirjottamisessa virhe")
            callback(err);
        });
 
@@ -95,7 +116,7 @@ async.series([
 
        // install monitored item
        var monitoredItem  = the_subscription.monitor({
-           nodeId: opcua.resolveNodeId("ns=1;s=free_memory"),
+           nodeId: opcua.resolveNodeId("ns=1;s=water_level"),
            attributeId: opcua.AttributeIds.Value
        },
        {
